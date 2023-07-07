@@ -218,24 +218,25 @@
             </svg>
         </section>
 
-        <nav class="navbar">
-            <a href="">
-                <p>Home</p>
-            </a>
-            <a href="">
-                <p>VFX</p>
-            </a>
-            <a href="">
-                <p>Apps</p>
-            </a>
-            <a href="">
-                <p>Writing</p>
-            </a>
-            <a href="">
-                <p>Contact</p>
-            </a>
-
-        </nav>
+      <nav class="navbar">
+        <a href="https://zoneofabi.github.io/contact/">
+          <p>Contact</p>
+        </a>
+        <a href="https://zoneofabi.github.io/art/">
+          <p>VFX</p>
+        </a>
+        <a class="teleportButton" href="https://zoneofabi.github.io/home/">
+          <p>Teleport To Home Base</p>
+        </a>
+        <a href="https://zoneofabi.github.io/apps/">
+          <p>Apps</p>
+        </a>
+        <a href="https://zoneofabi.github.io/writing/">
+          <p>Writing</p>
+        </a>
+      
+      
+      </nav>
     </div>
 
 
@@ -261,14 +262,118 @@
 
                 <article class="docArticle">
 
-                   <p>This page is currently under construction</p>
+                  <h3>Ray Refraction</h3>
+
+                   <p>While the standard projection functionality rotates vectors and gives you the sense of a three dimensional world, it doesn't fully 
+                    emulate the way vision works in the real world. 
+                   </p>
+
+                   <p>
+                    Notice that if you keep 2 vectors lined up with each other (same X and Y coordinate) and only space them apart on the Z axis........you actually will not see both vectors seperately.
+                    They will appear as one vector because they are lined up perfectly.
+                   </p>
+
+                   <p>
+                    But this is not how it would appear in the real world. In the real world, things appear to converge at a vanishing point the further they get away. You can notice this especially with 
+                    lines like rail tracks, long straight roads, etc. 
+                   </p>
+
+                   <p>
+                    It is also a famous technique in painting/drawing called "One Point Perspective" where all the objects in a scene are oriented to converge at one central poiint.
+                   </p>
+
+                   <p>
+                    To recreate this effect, you'll need some kind of a system where the <strong> distance </strong> from the vector to the camera screen 
+                    has an effect on where it gets rendered on the screen.
+                   </p>
+
+                   <p>
+                    There are multiple ways you can achieve this. You could just measure the distance and implement some displacement that shifts the vector to the center of the screen. And the magnitude of that shift 
+                    is based on the distance.
+                   </p>
+
+                   <p>
+                    However that felt too artificial. I built a more organic approach that closely mimics how rays work in the real world. We create a convergence point behind the camera screen and assume 
+                    that all the vectors in our world shoot towards this point.......and somewhere during a ray's journey towards this point, it will intersect the camera screen (before reaching that convergence point). We render our rays 
+                    at this intersection point.
+                   </p>
+
+                   <p>
+                    But don't worry, this doesn't mean that we have to completely forget about our previous standard projection coordinates. In fact, we can implement this mechanic by taking our previous method into account as well!
+                   </p>
+
+                   <p>
+                    Notice that we can form a triangle between our standard projection intersection (the part of the screen where the standard projection rays hit), the convergence point (behind the camera screen) and the vector itself. And somewhere in the middle of this triangle, lies the camera screen. 
+
+                   </p>
+
+                   <p>
+                    Now notice that if we draw a line between our standard projection spot and the intersection spot where the ray would land if it shot towards the convergence point.......you can form a new triangle. 
+                    And the base of this triangle represents the displacement between the standard projection spot and the new converge ray intersection spot. If we can find the base of this triangle, we can apply that displacement to our 
+                    existing standard projection coordinates to reach the new converged ray projection coordinates. However we don't have enough data about this new triangle in order to find the length of that base. 
+                   </p>
+
+                   <p>
+                    So instead, we can consider our previous triangle (between the standard projection spot, the convergence point and the vector), and use the law of cosines to get angle B (the angle formed right at the vector's side). 
+                    Once we have that angle, we can calculate the base of the inner triangle we just talked about. 
+                   </p>
+
+                   <p>
+                    And we repeat this process for each dimension seperately. First do it for the YZ
+                   </p>
+
+
+
 
                 </article>
 
                 <article class="docArticle">
 
-                    <p>This page is currently under construction</p>
+                    <h3>How to find the projection spots</h3>
 
+                    <p>
+                      This is a tricky part of the process. So far we have had to calculate the X and Y projections of the vectors when transforming them. 
+                      But we never knew the actual world coordinates of where it hits the screen! How do we find this out?
+                    </p>
+
+                    <p>
+                      A method to do this is to use the projected vector's coordinates to construct an entirely new seperate vector which has the same X and Y coordinates as the projected vector but a Z value of 0. The idea is that it 
+                      originates at the same place as the camera screen and we are considering the projected spot as a vector itself (seperating itself from the actual vector of the object we are rendering).
+                    </p>
+
+                    <p>
+                      Once we have constructed this vector, we make it undergo the same translations that the camera has undergone (so that it is displaced to the same coordinates as the camera) and then we make it undergo the same 
+                      sequence of rotations that the camera has undergone so that it lines up in the same orientation as the camera screen is pointed at.
+                    </p>
+
+                    <p>
+                      This is how we arrive at the world coordinates of the projection spot
+                    </p>
+
+                    <h3>Finding the convergence point coordinates</h3>
+
+
+                    <p>
+                      We apply this same logic to calculate the position of the convergence point behind the camera. Consider it as a vector that originates at [0,0,0] and shift it to where you want the convergence point of the camera to be. Lets say [0, 0, -3] To shift it 3 units behind the camera. 
+                      Now just displace that vector by the camera's coordinates and make it undergo the same rotations. We then get the final coordinates of the convergence point.
+                    </p>
+
+                    <p>
+                      We already know the coordinates of the vector of the object that we are rendering. Once we all all these points, we can go ahead and find our angles.
+                    </p>
+
+
+                    <h3>Some notes on the process: </h3>
+
+                    <p>
+
+                      It's easy to get overwhelmed when considering that these points exist on 3 dimensions and figuring out the best way to calculate them.
+                    </p>
+
+                    <p>
+                      But I've found the best way to approach this is to perform this process in a 2 dimensional context for each plane (XY, YZ, XZ), one at a time and then apply the displacement individually on the relevant axis 
+                      after doing each stage.
+                    </p>
                 </article>
 
 
